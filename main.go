@@ -61,14 +61,12 @@ func welcomeMessage(){
 	var playerName string
 
 	printTitle()
-	fmt.Printf("Let's Begin \n")
 	fmt.Printf("Please enter your name: ")
 	fmt.Scanln(&playerName)
 
 	gameData.playerName = playerName
 
 	fmt.Printf("Hello %s, let's start the game\n", playerName)
-	fmt.Println()
 }
 
 
@@ -163,34 +161,6 @@ func isGameOver(dataThrowaway [6]Throwaway)bool{
 	return false
 }
 
-func printRolledDice(dice [NDICE]int){
-	for i, die := range dice{
-		fmt.Printf("Dice [%d] : %d\n", i+1, die)
-	}
-}
-
-func pickPairOfDice()(int, int){
-	var firstDice, secondDice int
-	var isValidInput bool
-
-	for !isValidInput {
-		firstDice, secondDice = 0, 0
-		fmt.Printf("Pick 2 Dice (1 ~ 4): ")
-		var scanDice , _ = fmt.Scan(&firstDice, &secondDice)
-
-		if firstDice > 4 || secondDice > 4 {
-			fmt.Printf("Please input a Valid Number from 1 to 4\n")
-		} else if scanDice < 2 {
-			fmt.Printf("Please input a valid 2 Pair of dice seperated by a space\n")
-		} else{
-			isValidInput = true
-		}
-
-	}
-
-	return firstDice, secondDice
-}
-
 func initializeGameData()([NPAIRS]Pairs, [NTHROW]Throwaway){
 	var dataPairs = [NPAIRS]Pairs{
 		Pairs{2, 100, 0, 0},
@@ -218,6 +188,45 @@ func initializeGameData()([NPAIRS]Pairs, [NTHROW]Throwaway){
 	return dataPairs, dataThrowaway
 }
 
+func askCommand(command *int){
+	*command = 0
+
+	fmt.Printf("\n=== Menu ===\n")
+	fmt.Printf("[1] Roll a Dice\n")
+	fmt.Printf("[2] Show Scoreboard\n")
+	fmt.Printf("Pick a menu : ")
+	fmt.Scan(command)
+	fmt.Println()
+}
+
+func printRolledDice(dice [NDICE]int){
+	fmt.Printf("=== Roll Dice === \n")
+	for i, die := range dice{
+		fmt.Printf("Dice [%d] : %d\n", i+1, die)
+	}
+}
+
+func pickPairOfDice()(int, int){
+	var firstDice, secondDice int
+	var isValidInput bool
+
+	for !isValidInput {
+		firstDice, secondDice = 0, 0
+		fmt.Printf("Pick 2 Dice (1 ~ 4): ")
+		var scanDice , _ = fmt.Scan(&firstDice, &secondDice)
+
+		if firstDice > 4 || secondDice > 4 {
+			fmt.Printf("Please input a Valid Number from 1 to 4\n")
+		} else if scanDice < 2 {
+			fmt.Printf("Please input a valid 2 Pair of dice seperated by a space\n")
+		} else{
+			isValidInput = true
+		}
+
+	}
+
+	return firstDice, secondDice
+}
 
 func playGame(){
 	var dataPairs, dataThrowaway = initializeGameData()
@@ -225,22 +234,29 @@ func playGame(){
 	var pickedPair PickedDice
 	var indexFromSum, scoreGained, sumPairs int
 
-	for !isGameOver(dataThrowaway) {
-		rollDice(&dice)
-		printRolledDice(dice)
-		pickedPair.firstDice, pickedPair.secondDice = pickPairOfDice()
+	var command int
+	askCommand(&command)
 
-		pickedPair.firstDiceIndex = pickedPair.firstDice - PICKOFFSET
-		pickedPair.secondDiceIndex = pickedPair.secondDice - PICKOFFSET
-		indexFromSum = findIndexFromSum(dice, pickedPair.firstDice, pickedPair.secondDice)
-		sumPairs = dice[pickedPair.firstDiceIndex] + dice[pickedPair.secondDiceIndex]
+	for !isGameOver(dataThrowaway) {	
+		switch command {
+		case 1:
+			rollDice(&dice)
+			printRolledDice(dice)
+			pickedPair.firstDice, pickedPair.secondDice = pickPairOfDice()
 
-		addThrowaway(&dice, &dataThrowaway, pickedPair)
-		calculateScore(indexFromSum, &dataPairs, &scoreGained)
-		calculateTotalScore(dataPairs)
-		fmt.Printf("You have picked %d and %d. Sum Pairs are %d. Gained %d points. Total Points: %d \n", dice[pickedPair.firstDiceIndex], dice[pickedPair.secondDiceIndex], sumPairs ,scoreGained, gameData.scoreTotal)
-		
-		printScoreboard(dataPairs, dataThrowaway)
+			pickedPair.firstDiceIndex = pickedPair.firstDice - PICKOFFSET
+			pickedPair.secondDiceIndex = pickedPair.secondDice - PICKOFFSET
+			indexFromSum = findIndexFromSum(dice, pickedPair.firstDice, pickedPair.secondDice)
+			sumPairs = dice[pickedPair.firstDiceIndex] + dice[pickedPair.secondDiceIndex]
+
+			addThrowaway(&dice, &dataThrowaway, pickedPair)
+			calculateScore(indexFromSum, &dataPairs, &scoreGained)
+			calculateTotalScore(dataPairs)
+			fmt.Printf("You have picked %d and %d. Sum Pairs are %d. Gained %d points. Total Points: %d \n", dice[pickedPair.firstDiceIndex], dice[pickedPair.secondDiceIndex], sumPairs ,scoreGained, gameData.scoreTotal)
+		case 2:
+			printScoreboard(dataPairs, dataThrowaway)
+		}
+		askCommand(&command)
 	}
 
 }
