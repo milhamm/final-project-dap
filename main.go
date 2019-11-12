@@ -39,25 +39,30 @@ type Throwaway struct{
 	total int
 }
 
-var gameData = GameData{"",0}
-
-func main(){
-	welcomeMessage()
-	playGame()
+type PickedDice struct{
+	firstDice int
+	secondDice int
+	firstDiceIndex int
+	secondDiceIndex int
 }
 
-func rollDice(dice *[NDICE]int){
-	for i := 0; i < NDICE;  i++ {
-		rand.Seed(time.Now().UnixNano() + int64(i))
-		(*dice)[i] = rand.Intn(6) + 1
-	}
+var gameData = GameData{"",0}
+
+func printTitle(){
+	fmt.Printf("   _____            __    ____         __                  ___  _        \n")
+	fmt.Printf("  / __(_)_ _  ___  / /__ / __/__ _____/ /__ ___ ___  ___  / _ \\(_)______ \n")
+	fmt.Printf(" _\\ \\/ /  ' \\/ _ \\/ / -_)\\ \\/ _ `/ __/  '_/(_-</ _ \\/ _ \\/ // / / __/ -_)\n")
+	fmt.Printf("/___/_/_/_/_/ .__/_/\\__/___/\\_,_/\\__/_/\\_\\/___/\\___/_//_/____/_/\\__/\\__/ \n")
+	fmt.Printf("           /_/                                                           \n\n")
+	fmt.Printf("====== Made by : Muhammad Ilham Mubarak - IF-43-INT - 1301194276 =======\n\n")
 }
 
 func welcomeMessage(){
 	var playerName string
 
-	fmt.Printf("Simple Sackson's Dice Solitaire Game\n")
-	fmt.Printf("Please enter your name:")
+	printTitle()
+	fmt.Printf("Let's Begin \n")
+	fmt.Printf("Please enter your name: ")
 	fmt.Scanln(&playerName)
 
 	gameData.playerName = playerName
@@ -66,7 +71,9 @@ func welcomeMessage(){
 	fmt.Println()
 }
 
+
 func printScoreboard(dataPairs [NPAIRS]Pairs, dataThrowaway [NTHROW]Throwaway){
+
 	fmt.Printf("+----------+------+-------+   +-----------+------+\n")
 	fmt.Printf("| Sum Pair | Mark | Score |   | Throwaway | Mark |\n")
 	fmt.Printf("+----------+------+-------+   +-----------+------+\n")
@@ -87,58 +94,33 @@ func printScoreboard(dataPairs [NPAIRS]Pairs, dataThrowaway [NTHROW]Throwaway){
 	fmt.Printf("+-----------------+-------+\n")
 }
 
-func playGame(){
-	var dataPairs = [NPAIRS]Pairs{
-		Pairs{2, 100, 0, 0},
-		Pairs{3, 70, 0, 0}, 
-		Pairs{4, 60, 0, 0},
-		Pairs{5, 50, 0, 0},
-		Pairs{6, 40, 0, 0},
-		Pairs{7, 30, 0, 0},
-		Pairs{8, 40, 0, 0},
-		Pairs{9, 50, 0, 0},
-		Pairs{10, 60, 0, 0},
-		Pairs{11, 70, 0, 0},
-		Pairs{12, 100, 0, 0},
+func rollDice(dice *[NDICE]int){
+	for i := 0; i < NDICE;  i++ {
+		rand.Seed(time.Now().UnixNano() + int64(i))
+		(*dice)[i] = rand.Intn(6) + 1
 	}
+}
 
-	var dataThrowaway = [NTHROW]Throwaway{
-		Throwaway{1, 0},
-		Throwaway{2, 0},
-		Throwaway{3, 0},
-		Throwaway{4, 0},
-		Throwaway{5, 0},
-		Throwaway{6, 0},
-	}
+func isThrowawayAlreadyThree(dataThrowaway [NTHROW]Throwaway) bool{
+	var throwAwayCount = 0
 
-	var dice [NDICE]int
-	var firstDice, secondDice int
-	var indexFromSum, scoreGained int
-
-	for !isThrowawayDone(dataThrowaway) {
-		rollDice(&dice)
-		for i, die := range dice{
-			fmt.Printf("Dice Number (%d) : %d\n", i+1, die)
+	for _, throwAway := range dataThrowaway {
+		if throwAway.total > 0{
+			throwAwayCount++
 		}
+	}
 
-		fmt.Printf("Pick 2 Dice: ")
-		fmt.Scan(&firstDice, &secondDice)
+	return throwAwayCount == 3
+}
 
-		indexFromSum = findIndexFromSum(dice, firstDice, secondDice)
-
-		for i, die := range dice {
-			if i!=firstDice - PICKOFFSET && i!=secondDice-PICKOFFSET{
+func addThrowaway(dice *[NDICE]int, dataThrowaway *[NTHROW]Throwaway, pickedPair PickedDice){
+	if !isThrowawayAlreadyThree(*dataThrowaway){
+		for i, die := range *dice {
+			if i != pickedPair.firstDiceIndex && i != pickedPair.secondDiceIndex{
 				dataThrowaway[die - PICKOFFSET].total++
 			}
 		}
-
-		calculateScore(indexFromSum, &dataPairs, &scoreGained)
-		calculateTotalScore(dataPairs)
-
-		fmt.Printf("You have picked %d and %d. Sum Pairs are %d. Gained %d points. Total Points: %d \n", dice[firstDice - PICKOFFSET], dice[secondDice - PICKOFFSET], indexFromSum ,scoreGained, gameData.scoreTotal)
-		printScoreboard(dataPairs, dataThrowaway)
 	}
-
 }
 
 func findIndexFromSum(dice [4]int, firstDice, secondDice int) int{
@@ -172,9 +154,98 @@ func calculateTotalScore(dataPairs [11]Pairs){
 	}
 }
 
-func isThrowawayDone(dataThrowaway [6]Throwaway)bool{
+func isGameOver(dataThrowaway [6]Throwaway)bool{
 	for _, throwAway := range dataThrowaway{
-			return throwAway.total == 8
+		if throwAway.total == 8{
+			return true
+		}
 	}
 	return false
+}
+
+func printRolledDice(dice [NDICE]int){
+	for i, die := range dice{
+		fmt.Printf("Dice [%d] : %d\n", i+1, die)
+	}
+}
+
+func pickPairOfDice()(int, int){
+	var firstDice, secondDice int
+	var isValidInput bool
+
+	for !isValidInput {
+		firstDice, secondDice = 0, 0
+		fmt.Printf("Pick 2 Dice (1 ~ 4): ")
+		var scanDice , _ = fmt.Scan(&firstDice, &secondDice)
+
+		if firstDice > 4 || secondDice > 4 {
+			fmt.Printf("Please input a Valid Number from 1 to 4\n")
+		} else if scanDice < 2 {
+			fmt.Printf("Please input a valid 2 Pair of dice seperated by a space\n")
+		} else{
+			isValidInput = true
+		}
+
+	}
+
+	return firstDice, secondDice
+}
+
+func initializeGameData()([NPAIRS]Pairs, [NTHROW]Throwaway){
+	var dataPairs = [NPAIRS]Pairs{
+		Pairs{2, 100, 0, 0},
+		Pairs{3, 70, 0, 0}, 
+		Pairs{4, 60, 0, 0},
+		Pairs{5, 50, 0, 0},
+		Pairs{6, 40, 0, 0},
+		Pairs{7, 30, 0, 0},
+		Pairs{8, 40, 0, 0},
+		Pairs{9, 50, 0, 0},
+		Pairs{10, 60, 0, 0},
+		Pairs{11, 70, 0, 0},
+		Pairs{12, 100, 0, 0},
+	}
+
+	var dataThrowaway = [NTHROW]Throwaway{
+		Throwaway{1, 0},
+		Throwaway{2, 0},
+		Throwaway{3, 0},
+		Throwaway{4, 0},
+		Throwaway{5, 0},
+		Throwaway{6, 0},
+	}
+
+	return dataPairs, dataThrowaway
+}
+
+
+func playGame(){
+	var dataPairs, dataThrowaway = initializeGameData()
+	var dice [NDICE]int
+	var pickedPair PickedDice
+	var indexFromSum, scoreGained, sumPairs int
+
+	for !isGameOver(dataThrowaway) {
+		rollDice(&dice)
+		printRolledDice(dice)
+		pickedPair.firstDice, pickedPair.secondDice = pickPairOfDice()
+
+		pickedPair.firstDiceIndex = pickedPair.firstDice - PICKOFFSET
+		pickedPair.secondDiceIndex = pickedPair.secondDice - PICKOFFSET
+		indexFromSum = findIndexFromSum(dice, pickedPair.firstDice, pickedPair.secondDice)
+		sumPairs = dice[pickedPair.firstDiceIndex] + dice[pickedPair.secondDiceIndex]
+
+		addThrowaway(&dice, &dataThrowaway, pickedPair)
+		calculateScore(indexFromSum, &dataPairs, &scoreGained)
+		calculateTotalScore(dataPairs)
+		fmt.Printf("You have picked %d and %d. Sum Pairs are %d. Gained %d points. Total Points: %d \n", dice[pickedPair.firstDiceIndex], dice[pickedPair.secondDiceIndex], sumPairs ,scoreGained, gameData.scoreTotal)
+		
+		printScoreboard(dataPairs, dataThrowaway)
+	}
+
+}
+
+func main(){
+	welcomeMessage()
+	playGame()
 }
