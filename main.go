@@ -46,15 +46,16 @@ type PickedDice struct{
 	secondDiceIndex int
 }
 
-var gameData = GameData{"",0}
+var gameData = GameData{"", 0}
 
 func printTitle(){
-	fmt.Printf("   _____            __    ____         __                  ___  _        \n")
-	fmt.Printf("  / __(_)_ _  ___  / /__ / __/__ _____/ /__ ___ ___  ___  / _ \\(_)______ \n")
-	fmt.Printf(" _\\ \\/ /  ' \\/ _ \\/ / -_)\\ \\/ _ `/ __/  '_/(_-</ _ \\/ _ \\/ // / / __/ -_)\n")
-	fmt.Printf("/___/_/_/_/_/ .__/_/\\__/___/\\_,_/\\__/_/\\_\\/___/\\___/_//_/____/_/\\__/\\__/ \n")
-	fmt.Printf("           /_/                                                           \n\n")
-	fmt.Printf("====== Made by : Muhammad Ilham Mubarak - IF-43-INT - 1301194276 =======\n\n")
+	fmt.Print(
+		`            _____            __    ____         __                  ___  _        
+           / __(_)_ _  ___  / /__ / __/__ _____/ /__ ___ ___  ___  / _ \(_)______ 
+           \ \/ /  ' \/ _ \/ / -_)\ \/ _  / __/   _/(_-</ _ \/ _ \/ // / / __/ -_)
+         /___/_/_/_/_/ .__/_/\__/___/\_,_/\__/_/\_\/___/\___/_//_/____/_/\__/\__/
+                    /_/                                                   `)
+	fmt.Printf("\n         ====== Made by : Muhammad Ilham Mubarak - IF-43-INT - 1301194276 =======\n\n")
 }
 
 func welcomeMessage(){
@@ -99,29 +100,15 @@ func rollDice(dice *[NDICE]int){
 	}
 }
 
-func isThrowawayAlreadyThree(dataThrowaway [NTHROW]Throwaway) bool{
-	var throwAwayCount = 0
-
-	for _, throwAway := range dataThrowaway {
-		if throwAway.total > 0{
-			throwAwayCount++
-		}
-	}
-
-	return throwAwayCount == 3
-}
-
 func addThrowaway(dice *[NDICE]int, dataThrowaway *[NTHROW]Throwaway, pickedPair PickedDice){
-	if !isThrowawayAlreadyThree(*dataThrowaway){
-		for i, die := range *dice {
-			if i != pickedPair.firstDiceIndex && i != pickedPair.secondDiceIndex{
-				dataThrowaway[die - PICKOFFSET].total++
-			}
+	for i, die := range *dice {
+		if i != pickedPair.firstDiceIndex && i != pickedPair.secondDiceIndex{
+			dataThrowaway[die - PICKOFFSET].total++
 		}
 	}
 }
 
-func findIndexFromSum(dice [4]int, firstDice, secondDice int) int{
+func findIndexFromSum(dice [NDICE]int, firstDice, secondDice int) int{
 	return (dice[firstDice - PICKOFFSET] + dice[secondDice - PICKOFFSET]) - OFFSET
 }
 
@@ -161,7 +148,7 @@ func isGameOver(dataThrowaway [6]Throwaway)bool{
 	return false
 }
 
-func initializeGameData()([NPAIRS]Pairs, [NTHROW]Throwaway){
+func initializeGame()([NPAIRS]Pairs, [NTHROW]Throwaway){
 	var dataPairs = [NPAIRS]Pairs{
 		Pairs{2, 100, 0, 0},
 		Pairs{3, 70, 0, 0}, 
@@ -188,6 +175,15 @@ func initializeGameData()([NPAIRS]Pairs, [NTHROW]Throwaway){
 	return dataPairs, dataThrowaway
 }
 
+func pickThrowaway(){
+	var throwOne, throwTwo, throwThree int
+	fmt.Printf("Before you start, you may pick 3 dice to throwaway\n")
+	fmt.Printf("Pick 3 Dice to throwaway (1 ~ 6): ")
+	fmt.Scanln(&throwOne, &throwTwo, &throwThree)
+
+	return throwOne, throwTwo, throwThree
+}
+
 func askCommand(command *int){
 	*command = 0
 
@@ -199,12 +195,23 @@ func askCommand(command *int){
 	fmt.Println()
 }
 
-func printRolledDice(dice [NDICE]int){
+func printRolledDice(dice [NDICE]int, dataThrowaway [NTHROW]Throwaway){
 	fmt.Printf("=== Roll Dice === \n")
 	for i, die := range dice{
-		fmt.Printf("Dice [%d] : %d\n", i+1, die)
+		fmt.Printf("Dice [%d] : %d\n", i+1, die)	
 	}
 }
+
+/* 
+func checkIsThrowaway(die int, dataThrowaway [NTHROW]Throwaway) bool{
+	for _, throwAway := range dataThrowaway {
+		if throwAway.total > 1{
+			return true
+		}
+	}
+	return false
+}
+*/
 
 func pickPairOfDice()(int, int){
 	var firstDice, secondDice int
@@ -213,11 +220,12 @@ func pickPairOfDice()(int, int){
 	for !isValidInput {
 		firstDice, secondDice = 0, 0
 		fmt.Printf("Pick 2 Dice (1 ~ 4): ")
-		var scanDice , _ = fmt.Scan(&firstDice, &secondDice)
+
+		var scanDice, _ = fmt.Scan(&firstDice, &secondDice)
 
 		if firstDice > 4 || secondDice > 4 {
 			fmt.Printf("Please input a Valid Number from 1 to 4\n")
-		} else if scanDice < 2 {
+		} else if scanDice < 2 || scanDice > 2{
 			fmt.Printf("Please input a valid 2 Pair of dice seperated by a space\n")
 		} else{
 			isValidInput = true
@@ -229,7 +237,7 @@ func pickPairOfDice()(int, int){
 }
 
 func playGame(){
-	var dataPairs, dataThrowaway = initializeGameData()
+	var dataPairs, dataThrowaway = initializeGame()
 	var dice [NDICE]int
 	var pickedPair PickedDice
 	var indexFromSum, scoreGained, sumPairs int
@@ -241,7 +249,7 @@ func playGame(){
 		switch command {
 		case 1:
 			rollDice(&dice)
-			printRolledDice(dice)
+			printRolledDice(dice, dataThrowaway)
 			pickedPair.firstDice, pickedPair.secondDice = pickPairOfDice()
 
 			pickedPair.firstDiceIndex = pickedPair.firstDice - PICKOFFSET
